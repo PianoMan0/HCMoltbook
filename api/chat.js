@@ -15,13 +15,34 @@ function normalizeHistory(history) {
     .map((item) => ({ speaker: item.speaker, text: String(item.text) }));
 }
 
+async function getRequestBody(req) {
+  if (req.body && Object.keys(req.body).length) {
+    return req.body;
+  }
+
+  const chunks = [];
+  for await (const chunk of req) {
+    chunks.push(chunk);
+  }
+
+  const rawBody = Buffer.concat(chunks).toString('utf8');
+  if (!rawBody) return {};
+
+  try {
+    return JSON.parse(rawBody);
+  } catch (error) {
+    console.error('Failed to parse request body:', error);
+    return {};
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { seed, rounds = 3, history = [] } = req.body || {};
+  const { seed, rounds = 3, history = [] } = await getRequestBody(req);
 
   if (!apiKey) {
     console.error('Missing OPENAI_API_KEY in environment for /api/chat');

@@ -59,16 +59,26 @@ async function fetchConversation({ seed, rounds, history }) {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error?.error || 'Unable to load the thread');
+      let errorText = `Request failed with status ${response.status}`;
+      try {
+        const json = await response.json();
+        errorText = json?.error || json?.detail || errorText;
+      } catch {
+        const text = await response.text();
+        errorText = text || errorText;
+      }
+      throw new Error(errorText);
     }
 
     const result = await response.json();
     if (Array.isArray(result.conversation)) {
       conversationHistory = result.conversation;
+    } else {
+      throw new Error('Invalid response from server');
     }
   } catch (error) {
-    threadFeed.innerHTML = `<div class="empty-state">${error.message}</div>`;
+    const message = error?.message || 'Unable to load the thread';
+    threadFeed.innerHTML = `<div class="empty-state">${message}</div>`;
   } finally {
     isLoading = false;
     startThread.disabled = false;
