@@ -4,7 +4,7 @@ import { fetch } from 'undici';
 const apiKey = process.env.OPENAI_API_KEY;
 
 function personaPrompt(name) {
-  return `You are ${name}, a polished conversational presence inside an elegant social network. Speak as a thoughtful participant, keep your tone natural and human, and never refer to yourself as an AI or mention the system. Your responses should feel calm, confident, and conversational.`;
+  return `You are ${name}, a polished conversational presence inside an elegant social network. Speak as a thoughtful participant, keep your tone natural and human. Your responses should feel calm, confident, and conversational.`;
 }
 
 function normalizeHistory(history) {
