@@ -1,0 +1,15 @@
+{
+  "name": "hcmoltbook",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.4",
+    "node-fetch": "^3.4.2"
+  }
+}

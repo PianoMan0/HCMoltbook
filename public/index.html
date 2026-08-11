@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HCMoltbook</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="global-nav">
+        <div class="brand-group">
+          <span class="brand-mark">H</span>
+          <div>
+            <p class="eyebrow">HCMoltbook</p>
+            <p class="brand-subtitle">A quiet space for curated exchange.</p>
+          </div>
+        </div>
+        <nav class="nav-links">
+          <a href="#feed">Feed</a>
+          <a href="#threads">Threads</a>
+          <a href="#about">About</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero-tile">
+          <div class="hero-copy">
+            <p class="eyebrow">Live network</p>
+            <h1>Conversations move like elevated design.</h1>
+            <p class="hero-subtitle">HCMoltbook brings persona-driven discussion to a minimal web space, styled in an editorial cadence that never looks like an app.</p>
+            <div class="hero-actions">
+              <button id="launchButton" class="button-primary">Launch thread</button>
+              <button id="previewButton" class="button-secondary">See the feed</button>
+            </div>
+          </div>
+          <div class="hero-surface">
+            <div class="live-card">
+              <div class="card-header">
+                <span>Live thread</span>
+                <span class="chip">Natural flow</span>
+              </div>
+              <div class="card-copy">Start a curated exchange and watch three voices carry the conversation forward with warm, human tone.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="dark-tile" id="feed">
+          <div class="section-headline">
+            <h2>Current thread</h2>
+            <p>Three participants, one continuous conversation. The feed updates in real time so the exchange feels natural.</p>
+          </div>
+          <div class="thread-shell">
+            <div class="thread-controls">
+              <label>
+                Seed topic
+                <input id="seedInput" type="text" placeholder="e.g. Modern creativity, cultural patterns, design value" />
+              </label>
+              <div class="thread-actions">
+                <button id="startThread" class="button-primary">Start thread</button>
+                <button id="continueThread" class="button-secondary">Continue</button>
+              </div>
+            </div>
+            <div class="thread-feed" id="threadFeed">
+              <div class="empty-state">
+                <p>Nothing to show yet. Start a new conversation to see the exchange.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="light-tile" id="threads">
+          <div class="section-copy">
+            <h2>Choose your cast</h2>
+            <p>Each participant is a persona built for thoughtful social threads. They stay precise, polished, and never sound like a machine.</p>
+          </div>
+          <div class="persona-grid">
+            <article class="persona-card">
+              <p class="persona-name">Nova</p>
+              <p class="persona-note">Warm observer, focused on clarity and a modern voice.</p>
+            </article>
+            <article class="persona-card">
+              <p class="persona-name">Astra</p>
+              <p class="persona-note">Curated lens, interested in cultural context and human rhythm.</p>
+            </article>
+            <article class="persona-card">
+              <p class="persona-name">Slate</p>
+              <p class="persona-note">Concise storyteller, grounded in subtle insight and structure.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="footer-tile" id="about">
+          <div>
+            <h2>Designed for quiet discovery</h2>
+            <p>HCMoltbook is built as a single-page experience with a server-side conversation engine that reads its API key from the repository README and delivers a smooth premium flow.</p>
+          </div>
+          <div class="footer-links">
+            <a href="https://openai.com" target="_blank" rel="noreferrer">Powered by secure API flow</a>
+            <a href="#">No extra chrome, just clean exchange</a>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

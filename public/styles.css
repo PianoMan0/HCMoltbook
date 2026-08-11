@@ -1,0 +1,392 @@
+:root {
+  color-scheme: light;
+  font-family: "SF Pro Text", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1d1d1f;
+  background: #ffffff;
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: #ffffff;
+}
+
+.page-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+}
+
+.global-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 0 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background: #0066cc;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 11px;
+  font-weight: 600;
+  color: #7a7a7a;
+}
+
+.brand-subtitle {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #333333;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.nav-links a {
+  color: #1d1d1f;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12px;
+}
+
+.hero-tile {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 48px;
+  padding: 64px 0 72px;
+}
+
+.hero-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hero-copy h1 {
+  margin: 12px 0 18px;
+  font-size: clamp(3rem, 5vw, 5.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.5px;
+  font-weight: 600;
+  max-width: 10ch;
+}
+
+.hero-subtitle {
+  max-width: 560px;
+  margin: 0;
+  font-size: 1.15rem;
+  color: #333333;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.button-primary,
+.button-secondary {
+  border: none;
+  cursor: pointer;
+  border-radius: 9999px;
+  padding: 14px 26px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.button-primary {
+  color: #ffffff;
+  background: #0066cc;
+}
+
+.button-secondary {
+  color: #0066cc;
+  background: #ffffff;
+  border: 1px solid #0066cc;
+}
+
+.hero-surface {
+  display: flex;
+  align-items: center;
+}
+
+.live-card {
+  width: 100%;
+  padding: 34px;
+  background: #f5f5f7;
+  border-radius: 18px;
+  border: 1px solid #e0e0e0;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.card-header span:first-child {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.chip {
+  font-size: 0.82rem;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #1d1d1f;
+  border: 1px solid #d2d2d7;
+}
+
+.card-copy {
+  margin: 0;
+  font-size: 1rem;
+  color: #333333;
+}
+
+.dark-tile {
+  margin-top: 120px;
+  padding: 56px 64px;
+  background: #1d1d1f;
+  color: #ffffff;
+  border-radius: 32px;
+}
+
+.section-headline h2,
+.section-copy h2 {
+  margin: 0 0 14px;
+  font-size: 2.2rem;
+  font-weight: 600;
+  letter-spacing: -0.6px;
+}
+
+.section-headline p,
+.section-copy p {
+  margin: 0;
+  font-size: 1rem;
+  color: #d1d1d6;
+  max-width: 680px;
+}
+
+.thread-shell {
+  display: grid;
+  gap: 24px;
+  margin-top: 36px;
+}
+
+.thread-controls {
+  display: grid;
+  gap: 16px;
+}
+
+.thread-controls label {
+  display: grid;
+  gap: 10px;
+  font-size: 0.95rem;
+  color: #bebec1;
+}
+
+.thread-controls input {
+  width: 100%;
+  border: none;
+  border-radius: 18px;
+  padding: 16px 18px;
+  font-size: 1rem;
+  background: #242427;
+  color: #ffffff;
+}
+
+.thread-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.thread-feed {
+  min-height: 320px;
+  padding: 28px;
+  background: #111113;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.message-row {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.message-row:last-child {
+  margin-bottom: 0;
+}
+
+.message-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.message-author {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.message-text {
+  white-space: pre-wrap;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: #d1d1d5;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 18px;
+  padding: 20px;
+}
+
+.empty-state {
+  color: #7a7a7f;
+  font-size: 1rem;
+  padding: 48px;
+  text-align: center;
+  background: rgba(255,255,255,0.04);
+  border-radius: 18px;
+}
+
+.light-tile {
+  margin-top: 100px;
+  padding: 64px 0;
+}
+
+.persona-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.persona-card {
+  padding: 28px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+}
+
+.persona-name {
+  margin: 0 0 12px;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.persona-note {
+  margin: 0;
+  font-size: 0.98rem;
+  color: #4a4a4c;
+}
+
+.footer-tile {
+  margin-top: 120px;
+  padding: 48px 52px;
+  border-radius: 28px;
+  background: #f5f5f7;
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr;
+  gap: 32px;
+  align-items: center;
+}
+
+.footer-tile h2 {
+  margin: 0 0 14px;
+  font-size: 2rem;
+  color: #1d1d1f;
+}
+
+.footer-tile p {
+  margin: 0;
+  color: #4a4a4c;
+  font-size: 1rem;
+}
+
+.footer-links {
+  display: grid;
+  gap: 10px;
+}
+
+.footer-links a {
+  color: #0066cc;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+@media (max-width: 960px) {
+  .hero-tile,
+  .footer-tile {
+    grid-template-columns: 1fr;
+  }
+
+  .page-shell {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
+
+@media (max-width: 720px) {
+  .global-nav {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .nav-links {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .thread-actions,
+  .hero-actions {
+    width: 100%;
+  }
+
+  .thread-actions button,
+  .hero-actions button {
+    width: 100%;
+  }
+
+  .persona-grid {
+    grid-template-columns: 1fr;
+  }
+}
