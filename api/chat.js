@@ -1,12 +1,6 @@
 import 'dotenv/config';
-import path from 'path';
-import express from 'express';
-import cors from 'cors';
 import { fetch } from 'undici';
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-const root = process.cwd();
 const apiKey = process.env.OPENAI_API_KEY;
 
 function personaPrompt(name) {
@@ -21,25 +15,26 @@ function normalizeHistory(history) {
     .map((item) => ({ speaker: item.speaker, text: String(item.text) }));
 }
 
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(root, 'public')));
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-app.post('/api/chat', async (req, res) => {
   const { seed, rounds = 3, history = [] } = req.body || {};
 
   if (!apiKey) {
-    console.error('Missing OPENAI_API_KEY in environment.');
-    return res.status(500).json({ error: 'OpenAI API key not configured in .env' });
+    console.error('Missing OPENAI_API_KEY in environment for /api/chat');
+    return res.status(500).json({ error: 'OpenAI API key not configured' });
+  }
+
+  if (!Number.isInteger(rounds) || rounds <= 0) {
+    return res.status(400).json({ error: 'Invalid rounds value. Must be a positive integer.' });
   }
 
   const personaNames = ['Nova', 'Astra', 'Slate'];
   const priorMessages = normalizeHistory(history);
   const conversation = [...priorMessages];
-
-  if (!Number.isInteger(rounds) || rounds <= 0) {
-    return res.status(400).json({ error: 'Invalid rounds value. Must be a positive integer.' });
-  }
 
   if (priorMessages.length === 0 && seed) {
     conversation.push({ speaker: 'Thread', text: String(seed).trim() });
@@ -83,13 +78,9 @@ app.post('/api/chat', async (req, res) => {
       conversation.push({ speaker, text: nextText });
     }
 
-    return res.json({ conversation });
+    return res.status(200).json({ conversation });
   } catch (error) {
     console.error('Chat generation failed:', error);
-    return res.status(500).json({ error: 'Unable to generate conversation. Check server logs.' });
+    return res.status(500).json({ error: 'Unable to generate conversation. Check logs.' });
   }
-});
-
-app.listen(PORT, () => {
-  console.log(`HCMoltbook server running on http://localhost:${PORT}`);
-});
+}
