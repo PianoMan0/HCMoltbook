@@ -56,7 +56,7 @@ export default async function handler(req, res) {
           Authorization: `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'gpt-3.5-turbo',
           messages,
           temperature: 0.78,
           max_tokens: 220,
@@ -66,7 +66,11 @@ export default async function handler(req, res) {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || 'OpenAI API request failed');
+        console.error('OpenAI API response failed:', response.status, errorText);
+        return res.status(500).json({
+          error: 'OpenAI API request failed',
+          detail: errorText
+        });
       }
 
       const payload = await response.json();
@@ -81,6 +85,8 @@ export default async function handler(req, res) {
     return res.status(200).json({ conversation });
   } catch (error) {
     console.error('Chat generation failed:', error);
-    return res.status(500).json({ error: 'Unable to generate conversation. Check logs.' });
+    return res.status(500).json({
+      error: error?.message || 'Unable to generate conversation. Check logs.'
+    });
   }
 }
