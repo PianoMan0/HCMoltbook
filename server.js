@@ -71,7 +71,8 @@ app.post('/api/chat', async (req, res) => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || 'OpenAI API request failed');
+        console.error('OpenAI API response failed:', response.status, errorText);
+        return res.status(500).json({ error: 'OpenAI API request failed', detail: errorText });
       }
 
       const payload = await response.json();
