@@ -29,8 +29,20 @@ app.post('/api/chat', async (req, res) => {
   const { seed, rounds = 3, history = [] } = req.body || {};
 
   if (!apiKey) {
-    console.error('Missing OPENAI_API_KEY in environment.');
-    return res.status(500).json({ error: 'OpenAI API key not configured in .env' });
+    console.warn('Missing OPENAI_API_KEY in environment — returning mock conversation');
+    const mockConversation = (seedVal, roundsVal = 3) => {
+      const personaNames = ['Nova', 'Astra', 'Slate'];
+      const convo = [];
+      if (seedVal) convo.push({ speaker: 'Thread', text: String(seedVal).trim() });
+      for (let i = 0; i < roundsVal; i += 1) {
+        const speaker = personaNames[(convo.length + i) % personaNames.length];
+        convo.push({ speaker, text: `Mock reply ${i + 1} from ${speaker}.` });
+      }
+      return convo;
+    };
+
+    const mock = mockConversation(seed, rounds);
+    return res.status(200).json({ conversation: mock, mock: true });
   }
 
   const personaNames = ['Nova', 'Astra', 'Slate'];

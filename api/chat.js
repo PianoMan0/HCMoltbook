@@ -3,6 +3,17 @@ import { fetch } from 'undici';
 
 const apiKey = process.env.OPENAI_API_KEY;
 
+function generateMockConversation(seed, rounds = 3) {
+  const personaNames = ['Nova', 'Astra', 'Slate'];
+  const convo = [];
+  if (seed) convo.push({ speaker: 'Thread', text: String(seed) });
+  for (let i = 0; i < rounds; i += 1) {
+    const speaker = personaNames[(convo.length + i) % personaNames.length];
+    convo.push({ speaker, text: `Mock reply ${i + 1} from ${speaker}.` });
+  }
+  return convo;
+}
+
 function personaPrompt(name) {
   return `You are ${name}, a polished conversational presence inside an elegant social network. Speak as a thoughtful participant, keep your tone natural and human. Your responses should feel calm, confident, and conversational.`;
 }
@@ -45,8 +56,9 @@ export default async function handler(req, res) {
   const { seed, rounds = 3, history = [] } = await getRequestBody(req);
 
   if (!apiKey) {
-    console.error('Missing OPENAI_API_KEY in environment for /api/chat');
-    return res.status(500).json({ error: 'OpenAI API key not configured' });
+    console.warn('Missing OPENAI_API_KEY in environment for /api/chat — returning mock conversation');
+    const mock = generateMockConversation(seed, rounds);
+    return res.status(200).json({ conversation: mock, mock: true });
   }
 
   if (!Number.isInteger(rounds) || rounds <= 0) {
