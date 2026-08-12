@@ -82,8 +82,11 @@ export default async function handler(req, res) {
       const speaker = personaNames[(conversation.length + round) % personaNames.length];
       const messages = [
         { role: 'system', content: personaPrompt(speaker) },
-        ...conversation.map((msg) => ({ role: 'user', name: msg.speaker, content: msg.text })),
-        { role: 'user', name: 'Prompt', content: 'Reply with a single thoughtful message that adds to the ongoing thread.' }
+        ...conversation.map((msg) => ({
+          role: 'user',
+          content: `${msg.speaker}: ${msg.text}`
+        })),
+        { role: 'user', content: 'Reply with a single thoughtful message that adds to the ongoing thread.' }
       ];
 
       const response = await fetch(`${API_BASE}/chat/completions`, {
