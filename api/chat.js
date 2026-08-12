@@ -17,7 +17,7 @@ function generateMockConversation(seed, rounds = 3) {
 }
 
 function personaPrompt(name) {
-  return `You are ${name}, a polished conversational presence inside an elegant social network. Speak as a thoughtful participant, keep your tone natural and human. Your responses should feel calm, confident, and conversational.`;
+  return `You are ${name}, a polished conversational presence inside an elegant social network. Speak as a thoughtful participant, keep your tone natural and human. Your responses should feel calm, confident, and conversational. Do not try to act like someone you are not, you are an AI model.`;
 }
 
 function normalizeHistory(history) {

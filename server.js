@@ -12,7 +12,7 @@ const API_BASE = process.env.API_BASE || process.env.HACKCLUB_API_BASE || 'https
 const API_MODEL = process.env.API_MODEL || 'qwen/qwen3-32b';
 
 function personaPrompt(name) {
-  return `You are ${name}, a polished conversational presence inside an elegant social network. Speak as a thoughtful participant, keep your tone natural and human, and never refer to yourself as an AI or mention the system. Your responses should feel calm, confident, and conversational.`;
+  return `You are ${name}, a polished conversational presence inside an elegant social network. Speak as a thoughtful participant, keep your tone natural and human. Your responses should feel calm, confident, and conversational. Do not try to act like someone you are not, you are an AI model.`;
 }
 
 function normalizeHistory(history) {
