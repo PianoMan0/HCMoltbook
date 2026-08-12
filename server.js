@@ -8,6 +8,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const root = process.cwd();
 const apiKey = process.env.OPENAI_API_KEY;
+const API_BASE = process.env.API_BASE || 'https://api.openai.com/v1';
+const API_MODEL = process.env.API_MODEL || 'gpt-4o-mini';
 
 function personaPrompt(name) {
   return `You are ${name}, a polished conversational presence inside an elegant social network. Speak as a thoughtful participant, keep your tone natural and human, and never refer to yourself as an AI or mention the system. Your responses should feel calm, confident, and conversational.`;
@@ -66,14 +68,14 @@ app.post('/api/chat', async (req, res) => {
         { role: 'user', name: 'Prompt', content: 'Reply with a single thoughtful message that adds to the ongoing thread.' }
       ];
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch(`${API_BASE}/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: API_MODEL,
           messages,
           temperature: 0.78,
           max_tokens: 220,

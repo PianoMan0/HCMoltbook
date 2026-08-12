@@ -2,6 +2,8 @@ import 'dotenv/config';
 import { fetch } from 'undici';
 
 const apiKey = process.env.OPENAI_API_KEY;
+const API_BASE = process.env.API_BASE || 'https://api.openai.com/v1';
+const API_MODEL = process.env.API_MODEL || 'gpt-3.5-turbo';
 
 function generateMockConversation(seed, rounds = 3) {
   const personaNames = ['Nova', 'Astra', 'Slate'];
@@ -82,14 +84,14 @@ export default async function handler(req, res) {
         { role: 'user', name: 'Prompt', content: 'Reply with a single thoughtful message that adds to the ongoing thread.' }
       ];
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch(`${API_BASE}/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
+          model: API_MODEL,
           messages,
           temperature: 0.78,
           max_tokens: 220,
