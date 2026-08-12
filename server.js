@@ -7,9 +7,9 @@ import { fetch } from 'undici';
 const app = express();
 const PORT = process.env.PORT || 3000;
 const root = process.cwd();
-const apiKey = process.env.OPENAI_API_KEY;
-const API_BASE = process.env.API_BASE || 'https://api.openai.com/v1';
-const API_MODEL = process.env.API_MODEL || 'gpt-4o-mini';
+const apiKey = process.env.OPENAI_API_KEY || process.env.HACKCLUB_API_KEY || process.env.AI_HACKCLUB_API_KEY || process.env.HACKCLUB_AI_API_KEY;
+const API_BASE = process.env.API_BASE || process.env.HACKCLUB_API_BASE || 'https://ai.hackclub.com/proxy/v1';
+const API_MODEL = process.env.API_MODEL || 'qwen/qwen3-32b';
 
 function personaPrompt(name) {
   return `You are ${name}, a polished conversational presence inside an elegant social network. Speak as a thoughtful participant, keep your tone natural and human, and never refer to yourself as an AI or mention the system. Your responses should feel calm, confident, and conversational.`;
@@ -31,20 +31,11 @@ app.post('/api/chat', async (req, res) => {
   const { seed, rounds = 3, history = [] } = req.body || {};
 
   if (!apiKey) {
-    console.warn('Missing OPENAI_API_KEY in environment — returning mock conversation');
-    const mockConversation = (seedVal, roundsVal = 3) => {
-      const personaNames = ['Nova', 'Astra', 'Slate'];
-      const convo = [];
-      if (seedVal) convo.push({ speaker: 'Thread', text: String(seedVal).trim() });
-      for (let i = 0; i < roundsVal; i += 1) {
-        const speaker = personaNames[(convo.length + i) % personaNames.length];
-        convo.push({ speaker, text: `Mock reply ${i + 1} from ${speaker}.` });
-      }
-      return convo;
-    };
-
-    const mock = mockConversation(seed, rounds);
-    return res.status(200).json({ conversation: mock, mock: true });
+    console.error('Missing AI API key in environment. Set OPENAI_API_KEY or HACKCLUB_API_KEY.');
+    return res.status(500).json({
+      error: 'AI API key not configured',
+      detail: 'Set OPENAI_API_KEY or HACKCLUB_API_KEY and optionally API_BASE/API_MODEL.'
+    });
   }
 
   const personaNames = ['Nova', 'Astra', 'Slate'];
@@ -85,14 +76,14 @@ app.post('/api/chat', async (req, res) => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('OpenAI API response failed:', response.status, errorText);
-        return res.status(500).json({ error: 'OpenAI API request failed', detail: errorText });
+        console.error('AI API response failed:', response.status, errorText);
+        return res.status(500).json({ error: 'AI API request failed', detail: errorText });
       }
 
       const payload = await response.json();
       const nextText = payload?.choices?.[0]?.message?.content?.trim();
       if (!nextText) {
-        throw new Error('No response text from OpenAI');
+        throw new Error('No response text returned by the AI provider');
       }
 
       conversation.push({ speaker, text: nextText });

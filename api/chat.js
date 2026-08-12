@@ -1,9 +1,9 @@
 import 'dotenv/config';
 import { fetch } from 'undici';
 
-const apiKey = process.env.OPENAI_API_KEY;
-const API_BASE = process.env.API_BASE || 'https://api.openai.com/v1';
-const API_MODEL = process.env.API_MODEL || 'gpt-3.5-turbo';
+const apiKey = process.env.OPENAI_API_KEY || process.env.HACKCLUB_API_KEY || process.env.AI_HACKCLUB_API_KEY || process.env.HACKCLUB_AI_API_KEY;
+const API_BASE = process.env.API_BASE || process.env.HACKCLUB_API_BASE || 'https://ai.hackclub.com/proxy/v1';
+const API_MODEL = process.env.API_MODEL || 'qwen/qwen3-32b';
 
 function generateMockConversation(seed, rounds = 3) {
   const personaNames = ['Nova', 'Astra', 'Slate'];
@@ -58,9 +58,11 @@ export default async function handler(req, res) {
   const { seed, rounds = 3, history = [] } = await getRequestBody(req);
 
   if (!apiKey) {
-    console.warn('Missing OPENAI_API_KEY in environment for /api/chat — returning mock conversation');
-    const mock = generateMockConversation(seed, rounds);
-    return res.status(200).json({ conversation: mock, mock: true });
+    console.error('Missing AI API key in environment for /api/chat. Set OPENAI_API_KEY or HACKCLUB_API_KEY.');
+    return res.status(500).json({
+      error: 'AI API key not configured',
+      detail: 'Set OPENAI_API_KEY or HACKCLUB_API_KEY and optionally API_BASE/API_MODEL.'
+    });
   }
 
   if (!Number.isInteger(rounds) || rounds <= 0) {
@@ -101,9 +103,9 @@ export default async function handler(req, res) {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('OpenAI API response failed:', response.status, errorText);
+        console.error('AI API response failed:', response.status, errorText);
         return res.status(500).json({
-          error: 'OpenAI API request failed',
+          error: 'AI API request failed',
           detail: errorText
         });
       }
@@ -111,7 +113,7 @@ export default async function handler(req, res) {
       const payload = await response.json();
       const nextText = payload?.choices?.[0]?.message?.content?.trim();
       if (!nextText) {
-        throw new Error('No response text from OpenAI');
+        throw new Error('No response text returned by the AI provider');
       }
 
       conversation.push({ speaker, text: nextText });
