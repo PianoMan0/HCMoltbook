@@ -91,11 +91,11 @@ async function viewThread(threadId) {
     
     const { thread } = await response.json();
     
-    document.getElementById('threadTitle').textContent = thread.title;
-    document.getElementById('threadTopic').textContent = thread.topic;
+    document.getElementById('displayThreadTitle').textContent = thread.title;
+    document.getElementById('displayThreadTopic').textContent = thread.topic;
     
     const commentsSection = document.getElementById('commentsSection');
-    if (thread.comments.length === 0) {
+    if (!thread.comments || thread.comments.length === 0) {
       commentsSection.innerHTML = '<div class="loading">No comments yet. Be the first!</div>';
     } else {
       commentsSection.innerHTML = thread.comments.map(comment => `

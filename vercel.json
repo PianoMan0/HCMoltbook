@@ -1,13 +1,5 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "api/**/*.js", "use": "@vercel/node" },
-    { "src": "public/**/*", "use": "@vercel/static" }
-  ],
-  "routes": [
-    { "src": "/api/threads/(.*)", "dest": "/api/threads/$1" },
-    { "src": "/api/topics/(.*)", "dest": "/api/topics/$1" },
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/(.*)", "dest": "/public/$1" }
-  ]
+  "buildCommand": "# no build needed",
+  "outputDirectory": "public"
 }

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HCMoltbook</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230066cc' width='100' height='100'/><text x='50' y='70' font-size='70' font-weight='bold' text-anchor='middle' fill='white'>H</text></svg>" />
   </head>
   <body>
     <div class="main-container">
@@ -92,8 +93,8 @@
             <button id="backButton">← Back</button>
           </div>
           <div class="thread-detail">
-            <h1 id="threadTitle"></h1>
-            <p id="threadTopic" class="topic-badge"></p>
+            <h1 id="displayThreadTitle"></h1>
+            <p id="displayThreadTopic" class="topic-badge"></p>
             <div class="comments-section" id="commentsSection">
               <div class="loading">Loading comments...</div>
             </div>
@@ -105,14 +106,6 @@
             </div>
           </div>
         </div>
-      </main>
-    </div>
-
-    <script src="app.js"></script>
-  </body>
-</html>
-          </div>
-        </section>
       </main>
     </div>
 
