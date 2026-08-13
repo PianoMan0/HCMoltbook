@@ -2,7 +2,6 @@
   "version": 2,
   "env": {},
   "buildCommand": "echo 'Build complete'",
-  "outputDirectory": "public",
   "public": true,
   "cleanUrls": true,
   "trailingSlash": false
