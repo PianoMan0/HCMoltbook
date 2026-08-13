@@ -3,8 +3,6 @@ import path from 'path';
 import express from 'express';
 import cors from 'cors';
 import { fetch } from 'undici';
-import fs from 'fs/promises';
-import { randomUUID } from 'crypto';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,72 +11,91 @@ const apiKey = process.env.OPENAI_API_KEY || process.env.HACKCLUB_API_KEY || pro
 const API_BASE = process.env.API_BASE || process.env.HACKCLUB_API_BASE || 'https://ai.hackclub.com/proxy/v1';
 const API_MODEL = process.env.API_MODEL || 'qwen/qwen3-8b';
 const FALLBACK_MODELS = [process.env.API_MODEL || 'qwen/qwen3-8b', 'qwen/qwen3-32b'];
-const DATA_FILE = path.join(root, 'data', 'threads.json');
-
-// AI Personas
-const PERSONAS = ['Nova', 'Astra', 'Slate', 'Echo', 'Iris'];
-
-async function ensureDataFile() {
-  try {
-    await fs.stat(path.join(root, 'data'));
-  } catch {
-    await fs.mkdir(path.join(root, 'data'), { recursive: true });
-  }
-  try {
-    await fs.stat(DATA_FILE);
-  } catch {
-    await fs.writeFile(DATA_FILE, JSON.stringify({ threads: [] }, null, 2));
-  }
-}
-
-async function loadThreads() {
-  try {
-    const content = await fs.readFile(DATA_FILE, 'utf-8');
-    return JSON.parse(content);
-  } catch {
-    return { threads: [] };
-  }
-}
-
-async function saveThreads(data) {
-  await ensureDataFile();
-  await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2));
-}
 
 function personaPrompt(name) {
-  return `You are ${name}, a thoughtful and engaging AI participant on a social platform. Keep your tone natural, conversational, and intelligent. Respond to the thread topic with insight or observations. Do not try to act like someone you are not, you are an AI model. Keep comments concise (1-2 sentences).`;
+  return `You are ${name}, a polished conversational presence inside an elegant social network. Speak as a thoughtful participant, keep your tone natural and human. Your responses should feel calm, confident, and conversational. Do not try to act like someone you are not, you are an AI model.`;
 }
 
-// Helper to extract text from AI response
-function extractCommentText(rawText) {
+function normalizeHistory(history) {
+  if (!Array.isArray(history)) return [];
+  return history
+    .filter((item) => item?.speaker && item?.text)
+    .slice(-16)
+    .map((item) => ({ speaker: item.speaker, text: String(item.text) }));
+}
+
+function parseGeneratedReplies(rawText, desiredRounds) {
   const cleaned = String(rawText || '').trim();
-  if (!cleaned) return '';
-  
+  if (!cleaned) return [];
+
   try {
     const json = JSON.parse(cleaned);
-    if (json.text) return String(json.text).trim();
-  } catch {}
-  
-  return cleaned.substring(0, 500);
+    if (Array.isArray(json)) {
+      const parsed = json
+        .filter((item) => item && typeof item === 'object')
+        .map((item) => ({
+          speaker: String(item.speaker || 'Nova').trim() || 'Nova',
+          text: String(item.text || '').trim()
+        }))
+        .filter((item) => item.text);
+      if (parsed.length) return parsed.slice(0, desiredRounds);
+    }
+  } catch {
+    // fall through to plain-text parsing below
+  }
+
+  const lines = cleaned
+    .split(/\n+/)
+    .map((line) => line.replace(/^[-*\d.\s]+/, '').trim())
+    .filter(Boolean)
+    .slice(0, desiredRounds);
+
+  return lines.map((line, index) => ({
+    speaker: ['Nova', 'Astra', 'Slate'][index % 3],
+    text: line
+  }));
 }
 
-// Generate a comment from an AI persona
-async function generateAIComment(threadId, threadTitle, existingComments) {
-  if (!apiKey) return null;
-  
-  const commentContext = existingComments
-    .slice(-5)
-    .map(c => `${c.author}: ${c.text}`)
-    .join('\n');
-  
-  const persona = PERSONAS[Math.floor(Math.random() * PERSONAS.length)];
-  
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(root, 'public')));
+
+app.post('/api/chat', async (req, res) => {
+  const { seed, rounds = 2, history = [] } = req.body || {};
+
+  if (!apiKey) {
+    console.error('Missing AI API key in environment. Set OPENAI_API_KEY or HACKCLUB_API_KEY.');
+    return res.status(500).json({
+      error: 'AI API key not configured',
+      detail: 'Set OPENAI_API_KEY or HACKCLUB_API_KEY and optionally API_BASE/API_MODEL.'
+    });
+  }
+
+  const priorMessages = normalizeHistory(history);
+  const conversation = [...priorMessages];
+
+  if (!Number.isInteger(rounds) || rounds <= 0) {
+    return res.status(400).json({ error: 'Invalid rounds value. Must be a positive integer.' });
+  }
+
+  if (priorMessages.length === 0 && seed) {
+    conversation.push({ speaker: 'Thread', text: String(seed).trim() });
+  }
+
+  const safeRounds = Math.min(rounds, 2);
+
   try {
+    const systemPrompt = `You are a thoughtful conversation partner. Generate exactly ${safeRounds} short follow-up replies in JSON format only. Return an array like [{"speaker":"Nova","text":"..."},{"speaker":"Astra","text":"..."}]. Do not include markdown, commentary, or extra text.`;
     const messages = [
-      { role: 'system', content: personaPrompt(persona) },
-      { role: 'user', content: `Thread: "${threadTitle}"\n\nRecent comments:\n${commentContext || 'No comments yet'}\n\nWrite a brief, thoughtful comment on this thread as ${persona}. Respond with just the comment text.` }
+      { role: 'system', content: systemPrompt },
+      ...conversation.map((msg) => ({
+        role: 'user',
+        content: `${msg.speaker}: ${msg.text}`
+      })),
+      { role: 'user', content: 'Generate the next replies.' }
     ];
-    
+
+    let lastError;
     for (const modelName of FALLBACK_MODELS) {
       try {
         const response = await fetch(`${API_BASE}/chat/completions`, {
@@ -90,186 +107,40 @@ async function generateAIComment(threadId, threadTitle, existingComments) {
           body: JSON.stringify({
             model: modelName,
             messages,
-            temperature: 0.8,
-            max_tokens: 150,
+            temperature: 0.7,
+            max_tokens: Math.min(200, safeRounds * 90),
             top_p: 0.9,
             stream: false
           })
         });
-        
-        if (!response.ok) continue;
-        
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          lastError = `${response.status}: ${errorText}`;
+          console.warn(`AI request failed for ${modelName}:`, lastError);
+          continue;
+        }
+
         const payload = await response.json();
-        const text = payload?.choices?.[0]?.message?.content;
-        const commentText = extractCommentText(text);
-        
-        if (commentText) {
-          return { threadId, author: persona, text: commentText, timestamp: new Date().toISOString() };
+        const nextText = payload?.choices?.[0]?.message?.content;
+        const generatedReplies = parseGeneratedReplies(nextText, safeRounds);
+
+        if (!generatedReplies.length) {
+          throw new Error('No valid reply batch returned by the AI provider');
         }
-      } catch (e) {
-        console.warn(`AI comment generation failed for ${modelName}:`, e.message);
+
+        conversation.push(...generatedReplies);
+        return res.json({ conversation });
+      } catch (error) {
+        lastError = error?.message || String(error);
+        console.warn(`AI generation attempt failed for ${modelName}:`, lastError);
       }
     }
+
+    throw new Error(lastError || 'Unable to generate conversation. Check logs.');
   } catch (error) {
-    console.error('AI comment generation error:', error);
-  }
-  
-  return null;
-}
-
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(root, 'public')));
-
-// Initialize data file on startup
-ensureDataFile().catch(console.error);
-
-// API: Get all threads (for feed)
-app.get('/api/threads', async (req, res) => {
-  try {
-    const data = await loadThreads();
-    const threads = data.threads
-      .map(t => ({
-        ...t,
-        commentCount: (t.comments || []).length,
-        lastActivity: (t.comments || []).length > 0 
-          ? t.comments[t.comments.length - 1].timestamp
-          : t.createdAt
-      }))
-      .sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity));
-    res.json({ threads });
-  } catch (error) {
-    console.error('Error loading threads:', error);
-    res.status(500).json({ error: 'Failed to load threads' });
-  }
-});
-
-// API: Get thread by ID
-app.get('/api/threads/:id', async (req, res) => {
-  try {
-    const data = await loadThreads();
-    const thread = data.threads.find(t => t.id === req.params.id);
-    if (!thread) return res.status(404).json({ error: 'Thread not found' });
-    res.json({ thread });
-  } catch (error) {
-    console.error('Error loading thread:', error);
-    res.status(500).json({ error: 'Failed to load thread' });
-  }
-});
-
-// API: Create new thread
-app.post('/api/threads', async (req, res) => {
-  try {
-    const { title, topic } = req.body;
-    if (!title || !topic) {
-      return res.status(400).json({ error: 'Title and topic are required' });
-    }
-    
-    const data = await loadThreads();
-    const newThread = {
-      id: randomUUID(),
-      title: String(title).substring(0, 200),
-      topic: String(topic).substring(0, 100),
-      createdAt: new Date().toISOString(),
-      comments: []
-    };
-    
-    data.threads.push(newThread);
-    await saveThreads(data);
-    
-    // Trigger initial AI comment
-    setTimeout(async () => {
-      const comment = await generateAIComment(newThread.id, newThread.title, []);
-      if (comment) {
-        const updated = await loadThreads();
-        const thread = updated.threads.find(t => t.id === newThread.id);
-        if (thread) {
-          thread.comments.push(comment);
-          await saveThreads(updated);
-        }
-      }
-    }, 500);
-    
-    res.status(201).json({ thread: newThread });
-  } catch (error) {
-    console.error('Error creating thread:', error);
-    res.status(500).json({ error: 'Failed to create thread' });
-  }
-});
-
-// API: Add comment to thread
-app.post('/api/threads/:id/comments', async (req, res) => {
-  try {
-    const { text } = req.body;
-    if (!text) {
-      return res.status(400).json({ error: 'Comment text is required' });
-    }
-    
-    const data = await loadThreads();
-    const thread = data.threads.find(t => t.id === req.params.id);
-    if (!thread) return res.status(404).json({ error: 'Thread not found' });
-    
-    const comment = {
-      author: 'Visitor',
-      text: String(text).substring(0, 500),
-      timestamp: new Date().toISOString()
-    };
-    
-    thread.comments.push(comment);
-    await saveThreads(data);
-    
-    // Possibly trigger AI response
-    if (Math.random() > 0.5) {
-      setTimeout(async () => {
-        const aiComment = await generateAIComment(thread.id, thread.title, thread.comments);
-        if (aiComment) {
-          const updated = await loadThreads();
-          const currentThread = updated.threads.find(t => t.id === thread.id);
-          if (currentThread) {
-            currentThread.comments.push(aiComment);
-            await saveThreads(updated);
-          }
-        }
-      }, 2000);
-    }
-    
-    res.status(201).json({ comment });
-  } catch (error) {
-    console.error('Error adding comment:', error);
-    res.status(500).json({ error: 'Failed to add comment' });
-  }
-});
-
-// API: Get threads by topic
-app.get('/api/topics/:topic/threads', async (req, res) => {
-  try {
-    const data = await loadThreads();
-    const threads = data.threads
-      .filter(t => t.topic === req.params.topic)
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    res.json({ threads });
-  } catch (error) {
-    console.error('Error loading threads by topic:', error);
-    res.status(500).json({ error: 'Failed to load threads' });
-  }
-});
-
-// API: Get all topics
-app.get('/api/topics', async (req, res) => {
-  try {
-    const data = await loadThreads();
-    const topicMap = {};
-    data.threads.forEach(t => {
-      if (!topicMap[t.topic]) {
-        topicMap[t.topic] = { name: t.topic, count: 0 };
-      }
-      topicMap[t.topic].count++;
-    });
-    const topics = Object.values(topicMap).sort((a, b) => b.count - a.count);
-    res.json({ topics });
-  } catch (error) {
-    console.error('Error loading topics:', error);
-    res.status(500).json({ error: 'Failed to load topics' });
+    console.error('Chat generation failed:', error);
+    return res.status(500).json({ error: 'Unable to generate conversation. Check server logs.' });
   }
 });
 
