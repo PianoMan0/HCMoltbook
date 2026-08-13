@@ -1,113 +1,247 @@
-const threadFeed = document.getElementById('threadFeed');
-const seedInput = document.getElementById('seedInput');
-const startThread = document.getElementById('startThread');
-const continueThread = document.getElementById('continueThread');
-const launchButton = document.getElementById('launchButton');
-const previewButton = document.getElementById('previewButton');
+// DOM Elements
+const pages = document.querySelectorAll('.page');
+const navItems = document.querySelectorAll('.nav-item');
+const feedContainer = document.getElementById('feedContainer');
+const topicsContainer = document.getElementById('topicsContainer');
+const newThreadForm = document.getElementById('newThreadForm');
+const commentForm = document.getElementById('commentForm');
+const backButton = document.getElementById('backButton');
 
-let conversationHistory = [];
-let isLoading = false;
+let currentThreadId = null;
 
-function updateFeed() {
-  threadFeed.innerHTML = '';
-  if (!conversationHistory.length) {
-    const empty = document.createElement('div');
-    empty.className = 'empty-state';
-    empty.textContent = 'Nothing to show yet. Start a new conversation to see the exchange.';
-    threadFeed.appendChild(empty);
-    return;
-  }
-
-  conversationHistory.forEach((message) => {
-    const row = document.createElement('div');
-    row.className = 'message-row';
-
-    const meta = document.createElement('div');
-    meta.className = 'message-meta';
-
-    const author = document.createElement('span');
-    author.className = 'message-author';
-    author.textContent = message.speaker;
-
-    const marker = document.createElement('span');
-    marker.textContent = '•';
-    marker.style.color = '#5f5f62';
-
-    meta.append(author, marker);
-
-    const text = document.createElement('div');
-    text.className = 'message-text';
-    text.textContent = message.text;
-
-    row.append(meta, text);
-    threadFeed.appendChild(row);
+// Page Navigation
+navItems.forEach(item => {
+  item.addEventListener('click', (e) => {
+    const page = e.currentTarget.dataset.page;
+    showPage(page);
+    navItems.forEach(n => n.classList.remove('active'));
+    e.currentTarget.classList.add('active');
   });
+});
+
+function showPage(pageName) {
+  pages.forEach(page => page.style.display = 'none');
+  const page = document.getElementById(`page-${pageName}`);
+  if (page) {
+    page.style.display = 'block';
+    if (pageName === 'feed') loadFeed();
+    if (pageName === 'topics') loadTopics();
+  }
 }
 
-async function fetchConversation({ seed, rounds, history }) {
-  if (isLoading) return;
-  isLoading = true;
-  startThread.disabled = true;
-  continueThread.disabled = true;
-  threadFeed.innerHTML = '<div class="empty-state">Loading your thread…</div>';
-
+// Load Feed
+async function loadFeed() {
   try {
-    const response = await fetch('/api/chat', {
+    feedContainer.innerHTML = '<div class="loading">Loading threads...</div>';
+    const response = await fetch('/api/threads');
+    if (!response.ok) throw new Error('Failed to load threads');
+    
+    const { threads } = await response.json();
+    
+    if (threads.length === 0) {
+      feedContainer.innerHTML = '<div class="loading" style="padding: 32px;">No threads yet. Create one to get started!</div>';
+      return;
+    }
+    
+    feedContainer.innerHTML = threads.map(thread => `
+      <div class="thread-card" onclick="viewThread('${thread.id}')">
+        <div class="thread-card-title">${escapeHtml(thread.title)}</div>
+        <div class="thread-card-meta">
+          <span class="thread-card-topic">${escapeHtml(thread.topic)}</span>
+          <span class="thread-card-stats">${thread.commentCount} comments</span>
+        </div>
+      </div>
+    `).join('');
+  } catch (error) {
+    feedContainer.innerHTML = `<div class="loading" style="color: #e74c3c;">Error loading threads: ${error.message}</div>`;
+  }
+}
+
+// Load Topics
+async function loadTopics() {
+  try {
+    topicsContainer.innerHTML = '<div class="loading">Loading topics...</div>';
+    const response = await fetch('/api/topics');
+    if (!response.ok) throw new Error('Failed to load topics');
+    
+    const { topics } = await response.json();
+    
+    if (topics.length === 0) {
+      topicsContainer.innerHTML = '<div class="loading" style="padding: 32px;">No topics yet.</div>';
+      return;
+    }
+    
+    topicsContainer.innerHTML = '<div class="topic-list">' + topics.map(topic => `
+      <div class="topic-item" onclick="filterByTopic('${topic.name}')">
+        <h3>${escapeHtml(topic.name)}</h3>
+        <p>${topic.count} thread${topic.count !== 1 ? 's' : ''}</p>
+      </div>
+    `).join('') + '</div>';
+  } catch (error) {
+    topicsContainer.innerHTML = `<div class="loading" style="color: #e74c3c;">Error loading topics: ${error.message}</div>`;
+  }
+}
+
+// View Thread Details
+async function viewThread(threadId) {
+  try {
+    currentThreadId = threadId;
+    const response = await fetch(`/api/threads/${threadId}`);
+    if (!response.ok) throw new Error('Failed to load thread');
+    
+    const { thread } = await response.json();
+    
+    document.getElementById('threadTitle').textContent = thread.title;
+    document.getElementById('threadTopic').textContent = thread.topic;
+    
+    const commentsSection = document.getElementById('commentsSection');
+    if (thread.comments.length === 0) {
+      commentsSection.innerHTML = '<div class="loading">No comments yet. Be the first!</div>';
+    } else {
+      commentsSection.innerHTML = thread.comments.map(comment => `
+        <div class="comment">
+          <div class="comment-author">
+            <span class="comment-author-name">${escapeHtml(comment.author)}</span>
+            ${comment.author !== 'Visitor' ? '<span class="comment-author-badge">AI</span>' : ''}
+          </div>
+          <div class="comment-time">${formatTime(comment.timestamp)}</div>
+          <div class="comment-text">${escapeHtml(comment.text)}</div>
+        </div>
+      `).join('');
+    }
+    
+    showPage('thread');
+  } catch (error) {
+    alert('Error loading thread: ' + error.message);
+  }
+}
+
+// Filter by topic
+async function filterByTopic(topic) {
+  try {
+    const response = await fetch(`/api/topics/${encodeURIComponent(topic)}/threads`);
+    if (!response.ok) throw new Error('Failed to load threads');
+    
+    const { threads } = await response.json();
+    showPage('feed');
+    
+    const feedContainer = document.getElementById('feedContainer');
+    if (threads.length === 0) {
+      feedContainer.innerHTML = `<div class="loading">No threads in "${topic}" topic.</div>`;
+      return;
+    }
+    
+    feedContainer.innerHTML = threads.map(thread => `
+      <div class="thread-card" onclick="viewThread('${thread.id}')">
+        <div class="thread-card-title">${escapeHtml(thread.title)}</div>
+        <div class="thread-card-meta">
+          <span class="thread-card-topic">${escapeHtml(thread.topic)}</span>
+          <span class="thread-card-stats">${thread.comments?.length || 0} comments</span>
+        </div>
+      </div>
+    `).join('');
+  } catch (error) {
+    alert('Error loading threads: ' + error.message);
+  }
+}
+
+// Create New Thread
+newThreadForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const title = document.getElementById('threadTitle').value.trim();
+  const topic = document.getElementById('threadTopic').value.trim();
+  
+  if (!title || !topic) {
+    alert('Please fill in all fields');
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/threads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seed, rounds, history })
+      body: JSON.stringify({ title, topic })
     });
-
-    if (!response.ok) {
-      let errorText = `Request failed with status ${response.status}`;
-      try {
-        const json = await response.json();
-        errorText = json?.error || json?.detail || errorText;
-      } catch {
-        const text = await response.text();
-        errorText = text || errorText;
-      }
-      throw new Error(errorText);
-    }
-
-    const result = await response.json();
-    if (Array.isArray(result.conversation)) {
-      conversationHistory = result.conversation;
-    } else {
-      throw new Error('Invalid response from server');
-    }
+    
+    if (!response.ok) throw new Error('Failed to create thread');
+    
+    newThreadForm.reset();
+    alert('Thread created! Check the feed to see it.');
+    showPage('feed');
+    loadFeed();
+    navItems[0].click();
   } catch (error) {
-    const message = error?.message || 'Unable to load the thread';
-    threadFeed.innerHTML = `<div class="empty-state">${message}</div>`;
-  } finally {
-    isLoading = false;
-    startThread.disabled = false;
-    continueThread.disabled = false;
-    updateFeed();
+    alert('Error creating thread: ' + error.message);
   }
-}
-
-startThread.addEventListener('click', () => {
-  const seed = seedInput.value.trim() || 'Open a fresh thread about how culture shapes modern networks.';
-  conversationHistory = [];
-  fetchConversation({ seed, rounds: 3, history: [] });
 });
 
-continueThread.addEventListener('click', () => {
-  if (!conversationHistory.length) {
-    startThread.click();
+// Add Comment
+commentForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const text = document.getElementById('commentText').value.trim();
+  
+  if (!text) {
+    alert('Please write a comment');
     return;
   }
-  fetchConversation({ seed: '', rounds: 2, history: conversationHistory });
+  
+  if (!currentThreadId) {
+    alert('No thread selected');
+    return;
+  }
+  
+  try {
+    const response = await fetch(`/api/threads/${currentThreadId}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    
+    if (!response.ok) throw new Error('Failed to add comment');
+    
+    document.getElementById('commentText').value = '';
+    viewThread(currentThreadId);
+  } catch (error) {
+    alert('Error adding comment: ' + error.message);
+  }
 });
 
-launchButton.addEventListener('click', () => {
-  window.scrollTo({ top: document.querySelector('#feed').offsetTop - 24, behavior: 'smooth' });
+// Back Button
+backButton.addEventListener('click', () => {
+  showPage('feed');
+  navItems.forEach(n => n.classList.remove('active'));
+  navItems[0].classList.add('active');
 });
 
-previewButton.addEventListener('click', () => {
-  startThread.click();
-  window.scrollTo({ top: document.querySelector('#feed').offsetTop - 24, behavior: 'smooth' });
-});
+// Utility Functions
+function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, m => map[m]);
+}
 
-updateFeed();
+function formatTime(isoString) {
+  const date = new Date(isoString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  
+  return date.toLocaleDateString();
+}
+
+// Initialize
+showPage('feed');
+loadFeed();
+
