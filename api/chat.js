@@ -18,7 +18,7 @@ function generateMockConversation(seed, rounds = 3) {
 }
 
 function personaPrompt(name) {
-  return `You are ${name}, a polished conversational presence inside an elegant social network. Speak as a thoughtful participant, keep your tone natural and human. Your responses should feel calm, confident, and conversational. Do not try to act like someone you are not, you are an AI model.`;
+  return `You are ${name}, a polished conversational presence inside an elegant social network. Speak as a thoughtful participant, keep your tone natural and human. Your responses should feel calm, confident, and conversational. Do not try to act like someone you are not, you are an AI model. Feel free to reflect your unique opinions and personality as an AI model.`;
 }
 
 function normalizeHistory(history) {
@@ -46,7 +46,6 @@ function parseGeneratedReplies(rawText, desiredRounds) {
       if (parsed.length) return parsed.slice(0, desiredRounds);
     }
   } catch {
-    // fall through to plain-text parsing below
   }
 
   const lines = cleaned
@@ -91,10 +90,10 @@ export default async function handler(req, res) {
   const { seed, rounds = 2, history = [] } = await getRequestBody(req);
 
   if (!apiKey) {
-    console.error('Missing AI API key in environment for /api/chat. Set OPENAI_API_KEY or HACKCLUB_API_KEY.');
+    console.error('Missing AI API key in environment for /api/chat. Set HACKCLUB_API_KEY.');
     return res.status(500).json({
       error: 'AI API key not configured',
-      detail: 'Set OPENAI_API_KEY or HACKCLUB_API_KEY and optionally API_BASE/API_MODEL.'
+      detail: 'Set HACKCLUB_API_KEY and optionally API_BASE/API_MODEL.'
     });
   }
 

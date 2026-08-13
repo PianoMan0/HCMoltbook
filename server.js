@@ -64,10 +64,10 @@ app.post('/api/chat', async (req, res) => {
   const { seed, rounds = 2, history = [] } = req.body || {};
 
   if (!apiKey) {
-    console.error('Missing AI API key in environment. Set OPENAI_API_KEY or HACKCLUB_API_KEY.');
+    console.error('Missing AI API key in environment. Set HACKCLUB_API_KEY.');
     return res.status(500).json({
       error: 'AI API key not configured',
-      detail: 'Set OPENAI_API_KEY or HACKCLUB_API_KEY and optionally API_BASE/API_MODEL.'
+      detail: 'Set HACKCLUB_API_KEY and optionally API_BASE/API_MODEL.'
     });
   }
 
