@@ -1,23 +1,34 @@
-// DOM Elements
-const pages = document.querySelectorAll('.page');
-const navItems = document.querySelectorAll('.nav-item');
-const feedContainer = document.getElementById('feedContainer');
-const topicsContainer = document.getElementById('topicsContainer');
-const newThreadForm = document.getElementById('newThreadForm');
-const commentForm = document.getElementById('commentForm');
-const backButton = document.getElementById('backButton');
-
+// State and DOM elements
 let currentThreadId = null;
+let pages, navItems, feedContainer, topicsContainer, newThreadForm, commentForm, backButton;
 
-// Page Navigation
-navItems.forEach(item => {
-  item.addEventListener('click', (e) => {
-    const page = e.currentTarget.dataset.page;
-    showPage(page);
-    navItems.forEach(n => n.classList.remove('active'));
-    e.currentTarget.classList.add('active');
+function initDOM() {
+  pages = document.querySelectorAll('.page');
+  navItems = document.querySelectorAll('.nav-item');
+  feedContainer = document.getElementById('feedContainer');
+  topicsContainer = document.getElementById('topicsContainer');
+  newThreadForm = document.getElementById('newThreadForm');
+  commentForm = document.getElementById('commentForm');
+  backButton = document.getElementById('backButton');
+
+  navItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+      const page = e.currentTarget.dataset.page;
+      showPage(page);
+      navItems.forEach(n => n.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+    });
   });
-});
+
+  backButton.addEventListener('click', () => {
+    showPage('feed');
+    navItems.forEach(n => n.classList.remove('active'));
+    navItems[0].classList.add('active');
+  });
+
+  newThreadForm.addEventListener('submit', handleCreateThread);
+  commentForm.addEventListener('submit', handleAddComment);
+}
 
 function showPage(pageName) {
   pages.forEach(page => page.style.display = 'none');
@@ -29,7 +40,6 @@ function showPage(pageName) {
   }
 }
 
-// Load Feed
 async function loadFeed() {
   try {
     feedContainer.innerHTML = '<div class="loading">Loading threads...</div>';
@@ -38,7 +48,7 @@ async function loadFeed() {
     
     const { threads } = await response.json();
     
-    if (threads.length === 0) {
+    if (!threads || threads.length === 0) {
       feedContainer.innerHTML = '<div class="loading" style="padding: 32px;">No threads yet. Create one to get started!</div>';
       return;
     }
@@ -48,16 +58,15 @@ async function loadFeed() {
         <div class="thread-card-title">${escapeHtml(thread.title)}</div>
         <div class="thread-card-meta">
           <span class="thread-card-topic">${escapeHtml(thread.topic)}</span>
-          <span class="thread-card-stats">${thread.commentCount} comments</span>
+          <span class="thread-card-stats">${thread.commentCount || 0} comments</span>
         </div>
       </div>
     `).join('');
   } catch (error) {
-    feedContainer.innerHTML = `<div class="loading" style="color: #e74c3c;">Error loading threads: ${error.message}</div>`;
+    feedContainer.innerHTML = `<div class="loading" style="color: #e74c3c;">Error: ${error.message}</div>`;
   }
 }
 
-// Load Topics
 async function loadTopics() {
   try {
     topicsContainer.innerHTML = '<div class="loading">Loading topics...</div>';
@@ -66,7 +75,7 @@ async function loadTopics() {
     
     const { topics } = await response.json();
     
-    if (topics.length === 0) {
+    if (!topics || topics.length === 0) {
       topicsContainer.innerHTML = '<div class="loading" style="padding: 32px;">No topics yet.</div>';
       return;
     }
@@ -78,11 +87,10 @@ async function loadTopics() {
       </div>
     `).join('') + '</div>';
   } catch (error) {
-    topicsContainer.innerHTML = `<div class="loading" style="color: #e74c3c;">Error loading topics: ${error.message}</div>`;
+    topicsContainer.innerHTML = `<div class="loading" style="color: #e74c3c;">Error: ${error.message}</div>`;
   }
 }
 
-// View Thread Details
 async function viewThread(threadId) {
   try {
     currentThreadId = threadId;
@@ -112,21 +120,20 @@ async function viewThread(threadId) {
     
     showPage('thread');
   } catch (error) {
-    alert('Error loading thread: ' + error.message);
+    alert('Error: ' + error.message);
   }
 }
 
-// Filter by topic
 async function filterByTopic(topic) {
   try {
     const response = await fetch(`/api/topics/${encodeURIComponent(topic)}/threads`);
     if (!response.ok) throw new Error('Failed to load threads');
     
     const { threads } = await response.json();
-    showPage('feed');
     
-    if (threads.length === 0) {
-      feedContainer.innerHTML = `<div class="loading">No threads in "${topic}" topic.</div>`;
+    if (!threads || threads.length === 0) {
+      feedContainer.innerHTML = `<div class="loading">No threads in "${escapeHtml(topic)}" topic.</div>`;
+      showPage('feed');
       return;
     }
     
@@ -139,13 +146,14 @@ async function filterByTopic(topic) {
         </div>
       </div>
     `).join('');
+    
+    showPage('feed');
   } catch (error) {
-    alert('Error loading threads: ' + error.message);
+    alert('Error: ' + error.message);
   }
 }
 
-// Create New Thread
-newThreadForm.addEventListener('submit', async (e) => {
+async function handleCreateThread(e) {
   e.preventDefault();
   const title = document.getElementById('threadTitle').value.trim();
   const topic = document.getElementById('threadTopic').value.trim();
@@ -165,17 +173,16 @@ newThreadForm.addEventListener('submit', async (e) => {
     if (!response.ok) throw new Error('Failed to create thread');
     
     newThreadForm.reset();
-    alert('Thread created! Check the feed to see it.');
+    alert('Thread created!');
     showPage('feed');
     loadFeed();
     navItems[0].click();
   } catch (error) {
-    alert('Error creating thread: ' + error.message);
+    alert('Error: ' + error.message);
   }
-});
+}
 
-// Add Comment
-commentForm.addEventListener('submit', async (e) => {
+async function handleAddComment(e) {
   e.preventDefault();
   const text = document.getElementById('commentText').value.trim();
   
@@ -198,33 +205,21 @@ commentForm.addEventListener('submit', async (e) => {
     
     if (!response.ok) throw new Error('Failed to add comment');
     
-    document.getElementById('commentText').value = '';
     viewThread(currentThreadId);
   } catch (error) {
-    alert('Error adding comment: ' + error.message);
+    alert('Error: ' + error.message);
   }
-});
+}
 
-// Back Button
-backButton.addEventListener('click', () => {
-  showPage('feed');
-  navItems.forEach(n => n.classList.remove('active'));
-  navItems[0].classList.add('active');
-});
-
-// Utility Functions
 function escapeHtml(text) {
-  const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-  return text.replace(/[&<>"']/g, m => map[m]);
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 function formatTime(isoString) {
+  if (!isoString) return 'unknown';
   const date = new Date(isoString);
   const now = new Date();
   const diffMs = now - date;
@@ -236,11 +231,18 @@ function formatTime(isoString) {
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
-  
   return date.toLocaleDateString();
 }
 
-// Initialize
-showPage('feed');
-loadFeed();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initDOM();
+    showPage('feed');
+    loadFeed();
+  });
+} else {
+  initDOM();
+  showPage('feed');
+  loadFeed();
+}
 

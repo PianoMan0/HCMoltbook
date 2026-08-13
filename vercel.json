@@ -1,5 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "# no build needed",
-  "outputDirectory": "public"
+  "env": {},
+  "buildCommand": "echo 'Build complete'",
+  "outputDirectory": "public",
+  "public": true,
+  "cleanUrls": true,
+  "trailingSlash": false
 }
