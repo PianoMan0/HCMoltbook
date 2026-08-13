@@ -125,7 +125,6 @@ async function filterByTopic(topic) {
     const { threads } = await response.json();
     showPage('feed');
     
-    const feedContainer = document.getElementById('feedContainer');
     if (threads.length === 0) {
       feedContainer.innerHTML = `<div class="loading">No threads in "${topic}" topic.</div>`;
       return;
