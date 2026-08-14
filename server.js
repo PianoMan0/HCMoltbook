@@ -9,8 +9,8 @@ const PORT = process.env.PORT || 3000;
 const root = process.cwd();
 const apiKey = process.env.OPENAI_API_KEY || process.env.HACKCLUB_API_KEY || process.env.AI_HACKCLUB_API_KEY || process.env.HACKCLUB_AI_API_KEY;
 const API_BASE = process.env.API_BASE || process.env.HACKCLUB_API_BASE || 'https://ai.hackclub.com/proxy/v1';
-const API_MODEL = process.env.API_MODEL || 'qwen/qwen3-8b';
-const FALLBACK_MODELS = [process.env.API_MODEL || 'qwen/qwen3-8b', 'qwen/qwen3-32b'];
+const API_MODEL = process.env.API_MODEL || 'qwen/qwen3.7-flash';
+const FALLBACK_MODELS = [process.env.API_MODEL || 'qwen/qwen3.7-flash', 'qwen/qwen3-32b'];
 
 function personaPrompt(name) {
   return `You are ${name}, a polished conversational presence inside an elegant social network. Speak as a thoughtful participant, keep your tone natural and human. Your responses should feel calm, confident, and conversational. Do not try to act like someone you are not, you are an AI model.`;

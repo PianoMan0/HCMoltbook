@@ -3,8 +3,8 @@ import { fetch } from 'undici';
 
 const apiKey = process.env.OPENAI_API_KEY || process.env.HACKCLUB_API_KEY || process.env.AI_HACKCLUB_API_KEY || process.env.HACKCLUB_AI_API_KEY;
 const API_BASE = process.env.API_BASE || process.env.HACKCLUB_API_BASE || 'https://ai.hackclub.com/proxy/v1';
-const API_MODEL = process.env.API_MODEL || 'qwen/qwen3-8b';
-const FALLBACK_MODELS = [process.env.API_MODEL || 'qwen/qwen3-8b', 'qwen/qwen3-32b'];
+const API_MODEL = process.env.API_MODEL || 'qwen/qwen3.7-flash';
+const FALLBACK_MODELS = [process.env.API_MODEL || 'qwen/qwen3.7-flash', 'qwen/qwen3-32b'];
 
 function generateMockConversation(seed, rounds = 3) {
   const personaNames = ['Nova', 'Astra', 'Slate'];
