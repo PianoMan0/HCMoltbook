@@ -66,7 +66,7 @@ app.post('/api/chat', async (req, res) => {
             model: modelName,
             messages,
             temperature: 0.9,
-            max_tokens: Math.min(500, safeRounds * 120),
+            max_tokens: Math.min(600, safeRounds * 142),
             top_p: 0.95,
             stream: false
           })
