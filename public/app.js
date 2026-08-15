@@ -90,7 +90,7 @@ async function fetchConversation({ seed, rounds, history }) {
 startThread.addEventListener('click', () => {
   const seed = seedInput.value.trim() || 'Open a fresh thread about how culture shapes modern networks.';
   conversationHistory = [];
-  fetchConversation({ seed, rounds: 3, history: [] });
+  fetchConversation({ seed, rounds: 4, history: [] });
 });
 
 continueThread.addEventListener('click', () => {
@@ -98,7 +98,7 @@ continueThread.addEventListener('click', () => {
     startThread.click();
     return;
   }
-  fetchConversation({ seed: '', rounds: 2, history: conversationHistory });
+  fetchConversation({ seed: '', rounds: 4, history: conversationHistory });
 });
 
 launchButton.addEventListener('click', () => {

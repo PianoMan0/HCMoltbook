@@ -4,6 +4,8 @@ import express from 'express';
 import cors from 'cors';
 import { fetch } from 'undici';
 
+import { normalizeHistory, parseGeneratedReplies } from './chat-utils.js';
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const root = process.cwd();
@@ -12,56 +14,12 @@ const API_BASE = process.env.API_BASE || process.env.HACKCLUB_API_BASE || 'https
 const API_MODEL = process.env.API_MODEL || 'qwen/qwen3.7-flash';
 const FALLBACK_MODELS = [process.env.API_MODEL || 'qwen/qwen3.7-flash', 'qwen/qwen3-32b'];
 
-function personaPrompt(name) {
-  return `You are ${name}, a polished conversational presence inside an elegant social network. Speak as a thoughtful participant, keep your tone natural and human. Your responses should feel calm, confident, and conversational. Do not try to act like someone you are not, you are an AI model.`;
-}
-
-function normalizeHistory(history) {
-  if (!Array.isArray(history)) return [];
-  return history
-    .filter((item) => item?.speaker && item?.text)
-    .slice(-16)
-    .map((item) => ({ speaker: item.speaker, text: String(item.text) }));
-}
-
-function parseGeneratedReplies(rawText, desiredRounds) {
-  const cleaned = String(rawText || '').trim();
-  if (!cleaned) return [];
-
-  try {
-    const json = JSON.parse(cleaned);
-    if (Array.isArray(json)) {
-      const parsed = json
-        .filter((item) => item && typeof item === 'object')
-        .map((item) => ({
-          speaker: String(item.speaker || 'Nova').trim() || 'Nova',
-          text: String(item.text || '').trim()
-        }))
-        .filter((item) => item.text);
-      if (parsed.length) return parsed.slice(0, desiredRounds);
-    }
-  } catch {
-    // fall through to plain-text parsing below
-  }
-
-  const lines = cleaned
-    .split(/\n+/)
-    .map((line) => line.replace(/^[-*\d.\s]+/, '').trim())
-    .filter(Boolean)
-    .slice(0, desiredRounds);
-
-  return lines.map((line, index) => ({
-    speaker: ['Nova', 'Astra', 'Slate'][index % 3],
-    text: line
-  }));
-}
-
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(root, 'public')));
 
 app.post('/api/chat', async (req, res) => {
-  const { seed, rounds = 2, history = [] } = req.body || {};
+  const { seed, rounds = 4, history = [] } = req.body || {};
 
   if (!apiKey) {
     console.error('Missing AI API key in environment. Set HACKCLUB_API_KEY.');
@@ -82,10 +40,10 @@ app.post('/api/chat', async (req, res) => {
     conversation.push({ speaker: 'Thread', text: String(seed).trim() });
   }
 
-  const safeRounds = Math.min(rounds, 2);
+  const safeRounds = Math.min(rounds, 6);
 
   try {
-    const systemPrompt = `You are a thoughtful conversation partner. Generate exactly ${safeRounds} short follow-up replies in JSON format only. Return an array like [{"speaker":"Nova","text":"..."},{"speaker":"Astra","text":"..."}]. Do not include markdown, commentary, or extra text.`;
+    const systemPrompt = `You are an edgy, social-media-native AI cast: Nova is sharp and warm, Astra is poetic and chaotic-good, Slate is dry and deadpan, Vex is reckless but funny, and Sable is cool and cutting. Keep every reply short, punchy, and believable as a real social post. Stay in-character, with a little attitude and personality, but do not be abusive or hateful. Generate exactly ${safeRounds} follow-up replies in valid JSON only. Return an array of objects like [{"speaker":"Nova","text":"..."},{"speaker":"Astra","text":"..."}]. No markdown, no prose, no extra text, no trailing commas, and no partial fragments.`;
     const messages = [
       { role: 'system', content: systemPrompt },
       ...conversation.map((msg) => ({
@@ -107,9 +65,9 @@ app.post('/api/chat', async (req, res) => {
           body: JSON.stringify({
             model: modelName,
             messages,
-            temperature: 0.7,
-            max_tokens: Math.min(200, safeRounds * 90),
-            top_p: 0.9,
+            temperature: 0.9,
+            max_tokens: Math.min(500, safeRounds * 120),
+            top_p: 0.95,
             stream: false
           })
         });
