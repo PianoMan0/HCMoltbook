@@ -65,7 +65,7 @@ app.post('/api/chat', async (req, res) => {
           body: JSON.stringify({
             model: modelName,
             messages,
-            temperature: 0.9,
+            temperature: 1,
             max_tokens: Math.min(600, safeRounds * 142),
             top_p: 0.95,
             stream: false
